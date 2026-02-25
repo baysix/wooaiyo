@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLoading } from '@/components/ui/global-loading';
 import { createNotice, updateNotice } from '@/actions/notices';
 
 interface NoticeFormProps {
@@ -17,11 +18,13 @@ export default function NoticeForm({ mode, noticeId, defaultValues }: NoticeForm
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const globalLoading = useLoading();
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
     setError('');
+    globalLoading.start();
 
     const formData = new FormData(e.currentTarget);
 
@@ -32,6 +35,7 @@ export default function NoticeForm({ mode, noticeId, defaultValues }: NoticeForm
     if ('error' in result && result.error) {
       setError(result.error);
       setLoading(false);
+      globalLoading.done();
       return;
     }
 

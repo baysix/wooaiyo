@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { LoadingProvider } from "@/components/ui/global-loading";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -22,7 +23,9 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className="antialiased">
-        {children}
+        <LoadingProvider>
+          {children}
+        </LoadingProvider>
       </body>
     </html>
   );

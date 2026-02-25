@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLoading } from '@/components/ui/global-loading';
 import { createOpenChat, updateOpenChat, uploadOpenChatImage } from '@/actions/open-chats';
 import { OPEN_CHAT_CATEGORIES } from '@/lib/constants';
 import type { OpenChatCategory } from '@/types/database';
@@ -25,6 +26,7 @@ export default function OpenChatForm({ mode, chatId, defaultValues }: OpenChatFo
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const globalLoading = useLoading();
   const [chatType, setChatType] = useState(defaultValues?.chat_type ?? 'public');
   const [category, setCategory] = useState<OpenChatCategory>(defaultValues?.category ?? '기타');
 
@@ -63,6 +65,7 @@ export default function OpenChatForm({ mode, chatId, defaultValues }: OpenChatFo
     e.preventDefault();
     setLoading(true);
     setError('');
+    globalLoading.start();
 
     try {
       // Upload new images
@@ -88,6 +91,7 @@ export default function OpenChatForm({ mode, chatId, defaultValues }: OpenChatFo
       if ('error' in result && result.error) {
         setError(result.error);
         setLoading(false);
+        globalLoading.done();
         return;
       }
 
@@ -99,6 +103,7 @@ export default function OpenChatForm({ mode, chatId, defaultValues }: OpenChatFo
     } catch (err) {
       setError(err instanceof Error ? err.message : '오류가 발생했습니다');
       setLoading(false);
+      globalLoading.done();
     }
   }
 

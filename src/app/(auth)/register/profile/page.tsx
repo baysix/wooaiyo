@@ -3,13 +3,13 @@
 import { useState, useEffect } from 'react';
 import { setupProfile } from '@/actions/auth';
 import { getActiveApartments } from '@/actions/apartments';
+import SubmitButton from '@/components/ui/submit-button';
 import type { Apartment } from '@/types/database';
 
 export default function ProfileSetupPage() {
   const [apartments, setApartments] = useState<Apartment[]>([]);
   const [selectedApt, setSelectedApt] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     async function fetchApartments() {
@@ -20,12 +20,10 @@ export default function ProfileSetupPage() {
   }, []);
 
   async function handleSubmit(formData: FormData) {
-    setLoading(true);
     setError(null);
     const result = await setupProfile(formData);
     if (result?.error) {
       setError(result.error);
-      setLoading(false);
     }
   }
 
@@ -78,13 +76,7 @@ export default function ProfileSetupPage() {
           <p className="text-sm text-red-500">{error}</p>
         )}
 
-        <button
-          type="submit"
-          disabled={loading || !selectedApt}
-          className="w-full rounded-lg bg-[#20C997] py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1BAE82] disabled:opacity-50"
-        >
-          {loading ? '설정 중...' : '시작하기'}
-        </button>
+        <SubmitButton loadingText="설정 중..." disabled={!selectedApt}>시작하기</SubmitButton>
       </form>
     </>
   );

@@ -3,13 +3,12 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { signUp } from '@/actions/auth';
+import SubmitButton from '@/components/ui/submit-button';
 
 export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
 
   async function handleSubmit(formData: FormData) {
-    setLoading(true);
     setError(null);
 
     const password = formData.get('password') as string;
@@ -17,14 +16,12 @@ export default function RegisterPage() {
 
     if (password !== confirm) {
       setError('비밀번호가 일치하지 않습니다');
-      setLoading(false);
       return;
     }
 
     const result = await signUp(formData);
     if (result?.error) {
       setError(result.error);
-      setLoading(false);
     }
   }
 
@@ -84,13 +81,7 @@ export default function RegisterPage() {
           <p className="text-sm text-red-500">{error}</p>
         )}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded-lg bg-[#20C997] py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1BAE82] disabled:opacity-50"
-        >
-          {loading ? '가입 중...' : '회원가입'}
-        </button>
+        <SubmitButton loadingText="가입 중...">회원가입</SubmitButton>
       </form>
 
       <p className="mt-6 text-center text-sm text-gray-500">

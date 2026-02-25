@@ -3,18 +3,16 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { signIn } from '@/actions/auth';
+import SubmitButton from '@/components/ui/submit-button';
 
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
 
   async function handleSubmit(formData: FormData) {
-    setLoading(true);
     setError(null);
     const result = await signIn(formData);
     if (result?.error) {
       setError(result.error);
-      setLoading(false);
     }
   }
 
@@ -61,13 +59,7 @@ export default function LoginPage() {
           <p className="text-sm text-red-500">{error}</p>
         )}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded-lg bg-[#20C997] py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1BAE82] disabled:opacity-50"
-        >
-          {loading ? '로그인 중...' : '로그인'}
-        </button>
+        <SubmitButton loadingText="로그인 중...">로그인</SubmitButton>
       </form>
 
       <p className="mt-6 text-center text-sm text-gray-500">

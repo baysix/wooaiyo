@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/layout/header';
+import { useLoading } from '@/components/ui/global-loading';
 import { getPostFormData, createPost, uploadPostImage } from '@/actions/posts';
 import { POST_TYPE_LABELS } from '@/lib/constants';
 import { cn } from '@/lib/utils';
@@ -19,6 +20,7 @@ export default function NewPostPage() {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const globalLoading = useLoading();
 
   useEffect(() => {
     async function fetchData() {
@@ -54,6 +56,7 @@ export default function NewPostPage() {
     const form = e.currentTarget;
     setLoading(true);
     setError(null);
+    globalLoading.start();
 
     try {
       // Upload images via server action
@@ -79,6 +82,7 @@ export default function NewPostPage() {
       setError(err instanceof Error ? err.message : '오류가 발생했습니다');
     } finally {
       setLoading(false);
+      globalLoading.done();
     }
   }
 
