@@ -51,6 +51,7 @@ export default function NewPostPage() {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const form = e.currentTarget;
     setLoading(true);
     setError(null);
 
@@ -66,7 +67,7 @@ export default function NewPostPage() {
       }
 
       // Create post via server action
-      const formData = new FormData(e.currentTarget);
+      const formData = new FormData(form);
       formData.set('type', type);
       const result = await createPost(formData, imageUrls);
 

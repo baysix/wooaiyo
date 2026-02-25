@@ -21,7 +21,9 @@ export default function LoginPage() {
   return (
     <>
       <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold text-[#20C997]">우아이요</h1>
+        <div className="mx-auto">
+          <img src="/logo.png" alt="우아이요" className="mx-auto" width={200} height={200} />
+        </div>
         <p className="mt-2 text-sm text-gray-500">우리 아파트는 이게 있어요</p>
       </div>
 

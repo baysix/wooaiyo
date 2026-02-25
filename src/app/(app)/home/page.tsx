@@ -30,7 +30,7 @@ export default async function HomePage() {
       {/* Header */}
       <header className="sticky top-0 z-40 bg-white px-4">
         <div className="flex h-14 items-center justify-between">
-          <span className="text-xl font-bold text-[#20C997]">우아이요</span>
+          <img src="/logo_txt.png" alt="우아이요" className="h-6" />
           <div className="flex items-center gap-1">
             <Link href="/notifications" className="flex h-10 w-10 items-center justify-center">
               <svg className="h-6 w-6 text-gray-700" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
@@ -52,7 +52,7 @@ export default async function HomePage() {
         </Link>
       </header>
 
-      <div className="overflow-y-auto pb-24" style={{ height: 'calc(100vh - 120px - 64px)' }}>
+      <div className="overflow-y-auto" style={{ height: 'calc(100vh - 120px - 64px)' }}>
         {/* Banner area */}
         <section className="px-4 pt-2 pb-4">
           <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#20C997] to-[#0CA678] px-5 py-6 text-white">
