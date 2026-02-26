@@ -2,46 +2,35 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
-import { requireAuth } from '@/lib/auth';
-import type { UserRole } from '@/types/database';
-
-async function getProfileWithRole(userId: string) {
-  const supabase = createClient();
-  const { data } = await supabase
-    .from('profiles')
-    .select('id, apartment_id, role')
-    .eq('id', userId)
-    .single();
-  return data as { id: string; apartment_id: string | null; role: UserRole } | null;
-}
-
-function canManageNotices(role: UserRole) {
-  return role === 'admin' || role === 'manager';
-}
+import { requireAuthWithRole, isAdmin, isManager } from '@/lib/auth';
 
 export async function getNotices() {
-  const auth = await requireAuth();
+  const auth = await requireAuthWithRole();
   const supabase = createClient();
 
-  const profile = await getProfileWithRole(auth.userId);
-  if (!profile?.apartment_id) return { notices: [], role: 'resident' as UserRole };
+  if (!auth.apartmentId && !isAdmin(auth.role)) {
+    return { notices: [], role: auth.role };
+  }
 
-  const { data } = await supabase
+  let query = supabase
     .from('notices')
     .select('*, author:profiles!author_id(id, nickname, avatar_url, role)')
-    .eq('apartment_id', profile.apartment_id)
     .order('is_pinned', { ascending: false })
     .order('created_at', { ascending: false })
     .limit(50);
 
-  return { notices: data ?? [], role: profile.role };
+  // Admin can see all notices; others only see their apartment's
+  if (!isAdmin(auth.role)) {
+    query = query.eq('apartment_id', auth.apartmentId!);
+  }
+
+  const { data } = await query;
+  return { notices: data ?? [], role: auth.role };
 }
 
 export async function getNotice(id: string) {
-  const auth = await requireAuth();
+  const auth = await requireAuthWithRole();
   const supabase = createClient();
-
-  const profile = await getProfileWithRole(auth.userId);
 
   const { data } = await supabase
     .from('notices')
@@ -49,8 +38,9 @@ export async function getNotice(id: string) {
     .eq('id', id)
     .single();
 
-  if (!data || data.apartment_id !== profile?.apartment_id) {
-    return { notice: null, role: 'resident' as UserRole };
+  // Admin can view any notice; others only their apartment's
+  if (!data || (!isAdmin(auth.role) && data.apartment_id !== auth.apartmentId)) {
+    return { notice: null, role: auth.role };
   }
 
   // Increment view count
@@ -59,16 +49,45 @@ export async function getNotice(id: string) {
     .update({ view_count: data.view_count + 1 })
     .eq('id', id);
 
-  return { notice: data, role: profile?.role ?? 'resident' as UserRole };
+  return { notice: data, role: auth.role };
 }
 
-export async function createNotice(formData: FormData) {
-  const auth = await requireAuth();
+export async function uploadNoticeImage(file: FormData) {
+  const auth = await requireAuthWithRole();
   const supabase = createClient();
 
-  const profile = await getProfileWithRole(auth.userId);
-  if (!profile?.apartment_id || !canManageNotices(profile.role)) {
+  const imageFile = file.get('file') as File;
+  if (!imageFile) return { error: 'No file provided' };
+
+  const fileName = `notices/${auth.userId}/${Date.now()}_${imageFile.name}`;
+  const { data, error } = await supabase.storage
+    .from('post-images')
+    .upload(fileName, imageFile);
+
+  if (error) return { error: error.message };
+
+  const { data: urlData } = supabase.storage
+    .from('post-images')
+    .getPublicUrl(data.path);
+
+  return { url: urlData.publicUrl };
+}
+
+export async function createNotice(formData: FormData, imageUrls: string[] = []) {
+  const auth = await requireAuthWithRole();
+  const supabase = createClient();
+
+  if (!isManager(auth.role)) {
     return { error: '권한이 없습니다' };
+  }
+
+  // Admin can specify target apartment; manager uses own apartment
+  const targetApartmentId = isAdmin(auth.role)
+    ? (formData.get('apartment_id') as string) || auth.apartmentId
+    : auth.apartmentId;
+
+  if (!targetApartmentId) {
+    return { error: '아파트를 선택해주세요' };
   }
 
   const title = formData.get('title') as string;
@@ -81,10 +100,11 @@ export async function createNotice(formData: FormData) {
   const { data, error } = await supabase
     .from('notices')
     .insert({
-      apartment_id: profile.apartment_id,
+      apartment_id: targetApartmentId,
       author_id: auth.userId,
       title: title.trim(),
       content: content.trim(),
+      images: imageUrls,
     })
     .select('id')
     .single();
@@ -94,12 +114,13 @@ export async function createNotice(formData: FormData) {
   return { success: true, id: data.id };
 }
 
-export async function updateNotice(id: string, formData: FormData) {
-  const auth = await requireAuth();
+export async function updateNotice(id: string, formData: FormData, imageUrls: string[] = []) {
+  const auth = await requireAuthWithRole();
   const supabase = createClient();
 
-  const profile = await getProfileWithRole(auth.userId);
-  if (!profile) return { error: '권한이 없습니다' };
+  if (!isManager(auth.role)) {
+    return { error: '권한이 없습니다' };
+  }
 
   const { data: notice } = await supabase
     .from('notices')
@@ -107,12 +128,18 @@ export async function updateNotice(id: string, formData: FormData) {
     .eq('id', id)
     .single();
 
-  if (!notice || notice.apartment_id !== profile.apartment_id) {
+  if (!notice) {
     return { error: '공지사항을 찾을 수 없습니다' };
   }
 
-  if (notice.author_id !== auth.userId && profile.role !== 'admin') {
-    return { error: '권한이 없습니다' };
+  // Admin can edit any notice; manager only their apartment's own notices
+  if (!isAdmin(auth.role)) {
+    if (notice.apartment_id !== auth.apartmentId) {
+      return { error: '공지사항을 찾을 수 없습니다' };
+    }
+    if (notice.author_id !== auth.userId) {
+      return { error: '권한이 없습니다' };
+    }
   }
 
   const title = formData.get('title') as string;
@@ -127,6 +154,7 @@ export async function updateNotice(id: string, formData: FormData) {
     .update({
       title: title.trim(),
       content: content.trim(),
+      images: imageUrls,
       updated_at: new Date().toISOString(),
     })
     .eq('id', id);
@@ -137,11 +165,12 @@ export async function updateNotice(id: string, formData: FormData) {
 }
 
 export async function deleteNotice(id: string) {
-  const auth = await requireAuth();
+  const auth = await requireAuthWithRole();
   const supabase = createClient();
 
-  const profile = await getProfileWithRole(auth.userId);
-  if (!profile) return { error: '권한이 없습니다' };
+  if (!isManager(auth.role)) {
+    return { error: '권한이 없습니다' };
+  }
 
   const { data: notice } = await supabase
     .from('notices')
@@ -149,12 +178,18 @@ export async function deleteNotice(id: string) {
     .eq('id', id)
     .single();
 
-  if (!notice || notice.apartment_id !== profile.apartment_id) {
+  if (!notice) {
     return { error: '공지사항을 찾을 수 없습니다' };
   }
 
-  if (notice.author_id !== auth.userId && profile.role !== 'admin') {
-    return { error: '권한이 없습니다' };
+  // Admin can delete any; manager only their apartment's own
+  if (!isAdmin(auth.role)) {
+    if (notice.apartment_id !== auth.apartmentId) {
+      return { error: '공지사항을 찾을 수 없습니다' };
+    }
+    if (notice.author_id !== auth.userId) {
+      return { error: '권한이 없습니다' };
+    }
   }
 
   const { error } = await supabase.from('notices').delete().eq('id', id);
@@ -164,11 +199,12 @@ export async function deleteNotice(id: string) {
 }
 
 export async function toggleNoticePin(id: string) {
-  const auth = await requireAuth();
+  const auth = await requireAuthWithRole();
   const supabase = createClient();
 
-  const profile = await getProfileWithRole(auth.userId);
-  if (!profile) return { error: '권한이 없습니다' };
+  if (!isManager(auth.role)) {
+    return { error: '권한이 없습니다' };
+  }
 
   const { data: notice } = await supabase
     .from('notices')
@@ -176,12 +212,18 @@ export async function toggleNoticePin(id: string) {
     .eq('id', id)
     .single();
 
-  if (!notice || notice.apartment_id !== profile.apartment_id) {
+  if (!notice) {
     return { error: '공지사항을 찾을 수 없습니다' };
   }
 
-  if (notice.author_id !== auth.userId && profile.role !== 'admin') {
-    return { error: '권한이 없습니다' };
+  // Admin can pin any; manager only their apartment's own
+  if (!isAdmin(auth.role)) {
+    if (notice.apartment_id !== auth.apartmentId) {
+      return { error: '공지사항을 찾을 수 없습니다' };
+    }
+    if (notice.author_id !== auth.userId) {
+      return { error: '권한이 없습니다' };
+    }
   }
 
   const { error } = await supabase

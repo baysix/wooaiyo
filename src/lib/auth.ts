@@ -64,6 +64,45 @@ export async function requireAuth(): Promise<JWTPayload> {
   return auth;
 }
 
+// Role helpers
+import { createClient } from '@/lib/supabase/server';
+import type { UserRole } from '@/types/database';
+
+export interface AuthWithRole {
+  userId: string;
+  email: string;
+  role: UserRole;
+  apartmentId: string | null;
+}
+
+/** Require auth + fetch profile role in one call */
+export async function requireAuthWithRole(): Promise<AuthWithRole> {
+  const auth = await requireAuth();
+  const supabase = createClient();
+  const { data } = await supabase
+    .from('profiles')
+    .select('role, apartment_id')
+    .eq('id', auth.userId)
+    .single();
+
+  return {
+    userId: auth.userId,
+    email: auth.email,
+    role: (data?.role ?? 'resident') as UserRole,
+    apartmentId: data?.apartment_id ?? null,
+  };
+}
+
+/** Platform admin (all permissions) */
+export function isAdmin(role: UserRole): boolean {
+  return role === 'admin';
+}
+
+/** Apartment manager or above */
+export function isManager(role: UserRole): boolean {
+  return role === 'admin' || role === 'manager';
+}
+
 // For middleware (can't use cookies() helper)
 export function getTokenFromRequest(cookieHeader: string | null): string | null {
   if (!cookieHeader) return null;

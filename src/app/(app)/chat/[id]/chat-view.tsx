@@ -4,6 +4,8 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { sendMessage, markChatAsRead } from '@/actions/chats';
 import { approveOpenChatAccess } from '@/actions/open-chats';
+import TransactionControls from '@/components/chat/transaction-controls';
+import type { PostType, PostStatus } from '@/types/database';
 
 interface Message {
   id: string;
@@ -13,6 +15,16 @@ interface Message {
   created_at: string;
 }
 
+interface PostInfo {
+  id: string;
+  title: string;
+  images: string[];
+  type: PostType;
+  status: PostStatus;
+  price: number | null;
+  buyer_id: string | null;
+}
+
 interface ChatViewProps {
   chatRoomId: string;
   currentUserId: string;
@@ -20,6 +32,9 @@ interface ChatViewProps {
   messages: Message[];
   openChat: { id: string; title: string; chat_type: string; creator_id: string } | null;
   isCreator: boolean;
+  post: PostInfo | null;
+  isSeller: boolean;
+  buyerId: string;
 }
 
 function formatTime(dateStr: string) {
@@ -36,6 +51,9 @@ export default function ChatView({
   messages: initialMessages,
   openChat,
   isCreator,
+  post,
+  isSeller,
+  buyerId,
 }: ChatViewProps) {
   const [messages, setMessages] = useState(initialMessages);
   const [input, setInput] = useState('');
@@ -201,6 +219,16 @@ export default function ChatView({
           </button>
         )}
       </header>
+
+      {/* Transaction card (post chat rooms) */}
+      {post && (
+        <TransactionControls
+          post={post}
+          chatRoomId={chatRoomId}
+          buyerId={buyerId}
+          isSeller={isSeller}
+        />
+      )}
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-gray-50">

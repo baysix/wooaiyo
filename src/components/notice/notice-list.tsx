@@ -26,6 +26,10 @@ export function NoticeCard({ notice }: { notice: NoticeWithAuthor }) {
   const roleLabel = USER_ROLE_LABELS[notice.author.role as keyof typeof USER_ROLE_LABELS] ?? '입주민';
   const roleIcon = ROLE_ICON[notice.author.role] ?? '📢';
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const images = (notice as any).images as string[] | undefined;
+  const thumbnail = images?.[0];
+
   return (
     <Link
       href={`/community/notices/${notice.id}`}
@@ -33,7 +37,9 @@ export function NoticeCard({ notice }: { notice: NoticeWithAuthor }) {
     >
       {/* Thumbnail area */}
       <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-gray-100 overflow-hidden">
-        {notice.author.avatar_url ? (
+        {thumbnail ? (
+          <img src={thumbnail} alt="" className="h-full w-full object-cover" />
+        ) : notice.author.avatar_url ? (
           <img src={notice.author.avatar_url} alt="" className="h-full w-full object-cover" />
         ) : (
           <span className="text-2xl">{roleIcon}</span>

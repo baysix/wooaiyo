@@ -23,6 +23,7 @@ export default async function EditNoticePage({ params }: Props) {
         defaultValues={{
           title: notice.title,
           content: notice.content,
+          images: (notice as unknown as { images?: string[] }).images ?? [],
         }}
       />
     </>

@@ -1,6 +1,7 @@
 'use server';
 
 import { redirect } from 'next/navigation';
+import { revalidatePath } from 'next/cache';
 import bcrypt from 'bcryptjs';
 import { createClient } from '@/lib/supabase/server';
 import { createToken, setAuthCookie, removeAuthCookie, requireAuth } from '@/lib/auth';
@@ -130,4 +131,64 @@ export async function setupProfile(formData: FormData) {
   }
 
   redirect('/home');
+}
+
+export async function getProfile() {
+  const auth = await requireAuth();
+  const supabase = createClient();
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', auth.userId)
+    .single();
+
+  return profile;
+}
+
+export async function updateProfile(formData: FormData, avatarUrl?: string) {
+  const auth = await requireAuth();
+  const supabase = createClient();
+
+  const nickname = formData.get('nickname') as string;
+
+  const updateData: Record<string, unknown> = {
+    nickname,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (avatarUrl !== undefined) {
+    updateData.avatar_url = avatarUrl || null;
+  }
+
+  const { error } = await supabase
+    .from('profiles')
+    .update(updateData)
+    .eq('id', auth.userId);
+
+  if (error) return { error: error.message };
+
+  revalidatePath('/my');
+  return { success: true };
+}
+
+export async function uploadAvatar(file: FormData) {
+  const auth = await requireAuth();
+  const supabase = createClient();
+
+  const imageFile = file.get('file') as File;
+  if (!imageFile) return { error: 'No file provided' };
+
+  const fileName = `avatars/${auth.userId}/${Date.now()}_${imageFile.name}`;
+  const { data, error } = await supabase.storage
+    .from('post-images')
+    .upload(fileName, imageFile);
+
+  if (error) return { error: error.message };
+
+  const { data: urlData } = supabase.storage
+    .from('post-images')
+    .getPublicUrl(data.path);
+
+  return { url: urlData.publicUrl };
 }

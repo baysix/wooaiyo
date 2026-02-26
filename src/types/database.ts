@@ -169,6 +169,7 @@ export interface Notice {
   author_id: string;
   title: string;
   content: string;
+  images: string[];
   is_pinned: boolean;
   view_count: number;
   created_at: string;

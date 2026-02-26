@@ -95,8 +95,8 @@ export const OPEN_CHAT_CATEGORY_COLORS: Record<OpenChatCategory, string> = {
 // User role labels
 export const USER_ROLE_LABELS: Record<UserRole, string> = {
   resident: '입주민',
-  manager: '관리자',
-  admin: '운영자',
+  manager: '아파트 운영자',
+  admin: '플랫폼 운영자',
 };
 
 // App info

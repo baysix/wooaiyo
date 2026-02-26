@@ -18,6 +18,7 @@ export default async function ChatPage({ params }: Props) {
 
   const otherUser = room.buyer_id === auth.userId ? room.seller : room.buyer;
   const isCreator = room.openChat?.creator_id === auth.userId;
+  const isSeller = room.seller_id === auth.userId;
 
   return (
     <ChatView
@@ -27,6 +28,9 @@ export default async function ChatPage({ params }: Props) {
       messages={messages}
       openChat={room.openChat}
       isCreator={isCreator}
+      post={room.post}
+      isSeller={isSeller}
+      buyerId={room.buyer_id}
     />
   );
 }

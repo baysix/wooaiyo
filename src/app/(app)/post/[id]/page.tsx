@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import Header from '@/components/layout/header';
+import PostActionBar from '@/components/post/post-action-bar';
+import PostDeleteButton from '@/components/post/post-delete-button';
 import { createClient } from '@/lib/supabase/server';
-import { requireAuth } from '@/lib/auth';
+import { requireAuthWithRole, isAdmin as checkIsAdmin } from '@/lib/auth';
 import { POST_TYPE_LABELS, POST_STATUS_LABELS, STATUS_COLORS, TYPE_COLORS } from '@/lib/constants';
 import { formatPrice, formatDate } from '@/lib/utils';
 import type { PostWithAuthor } from '@/types/database';
@@ -9,8 +11,9 @@ import { notFound } from 'next/navigation';
 
 export default async function PostDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const auth = await requireAuth();
+  const auth = await requireAuthWithRole();
   const supabase = createClient();
+  const userIsAdmin = checkIsAdmin(auth.role);
 
   const { data: post } = await supabase
     .from('posts')
@@ -42,10 +45,15 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
         showBack
         showNotification={false}
         rightAction={
-          isAuthor ? (
-            <Link href={`/post/${id}/edit`} className="text-sm text-gray-500">
-              수정
-            </Link>
+          isAuthor || userIsAdmin ? (
+            <div className="flex items-center gap-3">
+              {isAuthor && (
+                <Link href={`/post/${id}/edit`} className="text-sm text-gray-500">
+                  수정
+                </Link>
+              )}
+              <PostDeleteButton postId={id} />
+            </div>
           ) : null
         }
       />
@@ -139,27 +147,7 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
 
       {/* Bottom action bar */}
       {!isAuthor && (
-        <div className="fixed bottom-20 left-0 right-0 border-t border-gray-100 bg-white px-4 py-3">
-          <div className="mx-auto flex max-w-lg items-center gap-3">
-            <button className="flex h-11 w-11 items-center justify-center rounded-lg border border-gray-200">
-              <svg
-                className={`h-6 w-6 ${bookmark ? 'fill-red-500 text-red-500' : 'text-gray-400'}`}
-                fill={bookmark ? 'currentColor' : 'none'}
-                stroke="currentColor"
-                strokeWidth={1.5}
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
-              </svg>
-            </button>
-            <Link
-              href={`/chat/${id}`}
-              className="flex-1 rounded-lg bg-[#20C997] py-3 text-center text-sm font-semibold text-white"
-            >
-              채팅하기
-            </Link>
-          </div>
-        </div>
+        <PostActionBar postId={id} initialBookmarked={!!bookmark} />
       )}
     </>
   );
