@@ -5,13 +5,22 @@ import { useRouter } from 'next/navigation';
 import { useLoading } from '@/components/ui/global-loading';
 import { toggleBookmark } from '@/actions/posts';
 import { createOrGetPostChatRoom } from '@/actions/chats';
+import { shareToKakao } from '@/lib/kakao';
+
+interface ShareData {
+  title: string;
+  description: string;
+  imageUrl: string;
+  link: string;
+}
 
 interface PostActionBarProps {
   postId: string;
   initialBookmarked: boolean;
+  shareData?: ShareData;
 }
 
-export default function PostActionBar({ postId, initialBookmarked }: PostActionBarProps) {
+export default function PostActionBar({ postId, initialBookmarked, shareData }: PostActionBarProps) {
   const router = useRouter();
   const [bookmarked, setBookmarked] = useState(initialBookmarked);
   const [loading, setLoading] = useState(false);
@@ -42,7 +51,7 @@ export default function PostActionBar({ postId, initialBookmarked }: PostActionB
 
   return (
     <div className="fixed bottom-20 left-0 right-0 border-t border-gray-100 bg-white px-4 py-3">
-      <div className="mx-auto flex max-w-lg items-center gap-3">
+      <div className="mx-auto flex max-w-lg items-center gap-2">
         <button
           onClick={handleBookmark}
           className="flex h-11 w-11 items-center justify-center rounded-lg border border-gray-200"
@@ -57,6 +66,17 @@ export default function PostActionBar({ postId, initialBookmarked }: PostActionB
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
           </svg>
         </button>
+        {shareData && (
+          <button
+            onClick={() => shareToKakao({ ...shareData, imageUrl: shareData.imageUrl || undefined })}
+            className="flex h-11 w-11 items-center justify-center rounded-lg border border-gray-200"
+            title="카카오톡 공유"
+          >
+            <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
+            </svg>
+          </button>
+        )}
         <button
           onClick={handleChat}
           disabled={loading}

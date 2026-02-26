@@ -1,13 +1,56 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import Header from '@/components/layout/header';
 import PostActionBar from '@/components/post/post-action-bar';
 import PostDeleteButton from '@/components/post/post-delete-button';
+import PostShareButton from '@/components/post/post-share-button';
 import { createClient } from '@/lib/supabase/server';
 import { requireAuthWithRole, isAdmin as checkIsAdmin } from '@/lib/auth';
 import { POST_TYPE_LABELS, POST_STATUS_LABELS, STATUS_COLORS, TYPE_COLORS } from '@/lib/constants';
 import { formatPrice, formatDate } from '@/lib/utils';
-import type { PostWithAuthor } from '@/types/database';
+import type { PostWithAuthor, PostType } from '@/types/database';
 import { notFound } from 'next/navigation';
+
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://wooaiyo.vercel.app';
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const supabase = createClient();
+
+  const { data: post } = await supabase
+    .from('posts')
+    .select('title, description, images, type, price, rental_fee')
+    .eq('id', id)
+    .single();
+
+  if (!post) {
+    return { title: '글을 찾을 수 없습니다 - 우아이요' };
+  }
+
+  const typeLabel = POST_TYPE_LABELS[post.type as PostType];
+  const title = `[${typeLabel}] ${post.title}`;
+  const description = post.description?.slice(0, 100) || '우아이요에서 확인하세요';
+  const image = post.images?.[0] || `${BASE_URL}/logo.png`;
+
+  return {
+    title: `${title} - 우아이요`,
+    description,
+    openGraph: {
+      title,
+      description,
+      images: [{ url: image, width: 800, height: 600 }],
+      url: `${BASE_URL}/post/${id}`,
+      type: 'article',
+      siteName: '우아이요',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [image],
+    },
+  };
+}
 
 export default async function PostDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -39,22 +82,39 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
     .eq('user_id', auth.userId)
     .single();
 
+  // Build share data
+  const priceText = p.type === 'share'
+    ? '나눔'
+    : p.type === 'rental'
+    ? (p.rental_fee ? formatPrice(p.rental_fee) + '/일' : '무료 대여')
+    : (p.price ? formatPrice(p.price) : '가격 미정');
+
+  const shareData = {
+    title: `[${POST_TYPE_LABELS[p.type]}] ${p.title}`,
+    description: `${priceText}${p.category ? ' · ' + p.category.name : ''}`,
+    imageUrl: p.images?.[0] || '',
+    link: `${BASE_URL}/post/${id}`,
+  };
+
   return (
     <>
       <Header
         showBack
         showNotification={false}
         rightAction={
-          isAuthor || userIsAdmin ? (
-            <div className="flex items-center gap-3">
-              {isAuthor && (
-                <Link href={`/post/${id}/edit`} className="text-sm text-gray-500">
-                  수정
-                </Link>
-              )}
-              <PostDeleteButton postId={id} />
-            </div>
-          ) : null
+          <div className="flex items-center gap-2">
+            <PostShareButton {...shareData} />
+            {(isAuthor || userIsAdmin) && (
+              <>
+                {isAuthor && (
+                  <Link href={`/post/${id}/edit`} className="text-sm text-gray-500">
+                    수정
+                  </Link>
+                )}
+                <PostDeleteButton postId={id} />
+              </>
+            )}
+          </div>
         }
       />
 
@@ -147,7 +207,7 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
 
       {/* Bottom action bar */}
       {!isAuthor && (
-        <PostActionBar postId={id} initialBookmarked={!!bookmark} />
+        <PostActionBar postId={id} initialBookmarked={!!bookmark} shareData={shareData} />
       )}
     </>
   );
