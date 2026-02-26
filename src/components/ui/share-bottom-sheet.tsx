@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { shareToKakao, copyLink, webShare, isKakaoAvailable, type ShareParams } from '@/lib/kakao';
+import { shareKakao, canShareKakao, copyLink, webShare, type ShareParams } from '@/lib/kakao';
 
 interface ShareBottomSheetProps {
   open: boolean;
@@ -20,42 +20,37 @@ export default function ShareBottomSheet({ open, onClose, shareData }: ShareBott
   }
 
   function handleKakao() {
-    const ok = shareToKakao(shareData);
-    if (!ok) {
-      showToast('카카오톡 공유를 사용할 수 없습니다');
-    }
+    const ok = shareKakao(shareData);
+    if (!ok) showToast('카카오톡 공유를 사용할 수 없습니다');
     onClose();
   }
 
   async function handleCopyLink() {
-    const ok = await copyLink(shareData.link);
-    if (ok) {
-      showToast('링크가 복사되었습니다');
-    }
+    await copyLink(shareData.link);
+    showToast('링크가 복사되었습니다');
     onClose();
   }
 
   async function handleWebShare() {
     const ok = await webShare(shareData);
     if (!ok) {
-      // Web Share API 지원 안 하면 링크 복사로 fallback
       await handleCopyLink();
       return;
     }
     onClose();
   }
 
-  const hasWebShare = typeof navigator !== 'undefined' && !!navigator.share;
+  const showKakao = canShareKakao();
+  const showWebShare = typeof navigator !== 'undefined' && !!navigator.share;
 
   return (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 z-50 bg-black/40" onClick={onClose} />
+      <div className="fixed inset-0 z-[60] bg-black/40" onClick={onClose} />
 
       {/* Sheet */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 animate-slide-up rounded-t-2xl bg-white pb-safe">
+      <div className="fixed bottom-0 left-0 right-0 z-[60] animate-slide-up rounded-t-2xl bg-white pb-safe">
         <div className="mx-auto max-w-lg">
-          {/* Handle */}
           <div className="flex justify-center pt-3 pb-2">
             <div className="h-1 w-10 rounded-full bg-gray-300" />
           </div>
@@ -63,8 +58,8 @@ export default function ShareBottomSheet({ open, onClose, shareData }: ShareBott
           <p className="px-4 pb-3 text-sm font-semibold text-gray-900">공유하기</p>
 
           <div className="grid grid-cols-3 gap-2 px-4 pb-6">
-            {/* 카카오톡 */}
-            {isKakaoAvailable() && (
+            {/* 카카오톡 (모바일만) */}
+            {showKakao && (
               <button
                 onClick={handleKakao}
                 className="flex flex-col items-center gap-2 rounded-xl p-3 active:bg-gray-50"
@@ -91,8 +86,8 @@ export default function ShareBottomSheet({ open, onClose, shareData }: ShareBott
               <span className="text-xs text-gray-700">링크 복사</span>
             </button>
 
-            {/* 기본 공유 (Web Share API) */}
-            {hasWebShare && (
+            {/* Web Share API */}
+            {showWebShare && (
               <button
                 onClick={handleWebShare}
                 className="flex flex-col items-center gap-2 rounded-xl p-3 active:bg-gray-50"
@@ -111,7 +106,7 @@ export default function ShareBottomSheet({ open, onClose, shareData }: ShareBott
 
       {/* Toast */}
       {toast && (
-        <div className="fixed bottom-24 left-1/2 z-[60] -translate-x-1/2 rounded-full bg-gray-800 px-4 py-2 text-sm text-white shadow-lg">
+        <div className="fixed bottom-24 left-1/2 z-[70] -translate-x-1/2 rounded-full bg-gray-800 px-4 py-2 text-sm text-white shadow-lg">
           {toast}
         </div>
       )}

@@ -6,81 +6,67 @@ declare global {
 }
 
 const KAKAO_APP_KEY = process.env.NEXT_PUBLIC_KAKAO_APP_KEY;
+const KAKAO_TEMPLATE_ID = 129840;
 
-export function initKakao() {
-  if (typeof window === 'undefined' || !window.Kakao) return false;
-  if (!KAKAO_APP_KEY) return false;
-
+function initKakao(): boolean {
+  if (typeof window === 'undefined' || !window.Kakao || !KAKAO_APP_KEY) return false;
   if (!window.Kakao.isInitialized()) {
     window.Kakao.init(KAKAO_APP_KEY);
   }
   return window.Kakao.isInitialized();
 }
 
+// --- 타입 ---
+
 export interface ShareParams {
   title: string;
   description: string;
+  price?: string;
   imageUrl?: string;
   link: string;
-  buttonText?: string;
 }
 
-export function shareToKakao({ title, description, imageUrl, link, buttonText = '글 보기' }: ShareParams) {
+// --- 공유 함수 ---
+
+/** 카카오톡 메시지 템플릿 공유 */
+export function shareKakao({ title, description, price, imageUrl, link }: ShareParams): boolean {
   if (!initKakao()) return false;
 
-  const content: any = {
-    title,
-    description,
-    link: {
-      mobileWebUrl: link,
-      webUrl: link,
-    },
-  };
+  const templateArgs: Record<string, string> = { title, description, link };
+  if (price) templateArgs.price = price;
+  if (imageUrl) templateArgs.imageUrl = imageUrl;
 
-  if (imageUrl) {
-    content.imageUrl = imageUrl;
-    content.imageWidth = 800;
-    content.imageHeight = 400;
-  }
-
-  window.Kakao.Share.sendDefault({
-    objectType: 'feed',
-    content,
-    buttons: [
-      {
-        title: buttonText,
-        link: {
-          mobileWebUrl: link,
-          webUrl: link,
-        },
-      },
-    ],
+  window.Kakao.Share.sendCustom({
+    templateId: KAKAO_TEMPLATE_ID,
+    templateArgs,
   });
   return true;
 }
 
-export function isKakaoAvailable() {
-  return typeof window !== 'undefined' && !!window.Kakao && !!KAKAO_APP_KEY;
+/** 카카오톡 공유 가능 여부 */
+export function canShareKakao(): boolean {
+  if (typeof window === 'undefined') return false;
+  return !!window.Kakao && !!KAKAO_APP_KEY;
 }
 
-export async function copyLink(link: string): Promise<boolean> {
+/** 클립보드에 링크 복사 */
+export async function copyLink(text: string): Promise<boolean> {
   try {
-    await navigator.clipboard.writeText(link);
+    await navigator.clipboard.writeText(text);
     return true;
   } catch {
-    // fallback for older browsers
-    const textarea = document.createElement('textarea');
-    textarea.value = link;
-    textarea.style.position = 'fixed';
-    textarea.style.opacity = '0';
-    document.body.appendChild(textarea);
-    textarea.select();
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
     document.execCommand('copy');
-    document.body.removeChild(textarea);
+    document.body.removeChild(ta);
     return true;
   }
 }
 
+/** 네이티브 Web Share API */
 export async function webShare({ title, description, link }: ShareParams): Promise<boolean> {
   if (!navigator.share) return false;
   try {

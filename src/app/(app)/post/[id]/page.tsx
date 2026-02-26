@@ -91,7 +91,8 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
 
   const shareData = {
     title: `[${POST_TYPE_LABELS[p.type]}] ${p.title}`,
-    description: `${priceText}${p.category ? ' · ' + p.category.name : ''}`,
+    description: '',
+    price: priceText,
     imageUrl: p.images?.[0] || '',
     link: `${BASE_URL}/post/${id}`,
   };
