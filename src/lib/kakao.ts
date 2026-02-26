@@ -17,7 +17,7 @@ export function initKakao() {
   return window.Kakao.isInitialized();
 }
 
-interface KakaoShareParams {
+export interface ShareParams {
   title: string;
   description: string;
   imageUrl?: string;
@@ -25,11 +25,8 @@ interface KakaoShareParams {
   buttonText?: string;
 }
 
-export function shareToKakao({ title, description, imageUrl, link, buttonText = '글 보기' }: KakaoShareParams) {
-  if (!initKakao()) {
-    alert('카카오톡 공유를 사용할 수 없습니다.');
-    return;
-  }
+export function shareToKakao({ title, description, imageUrl, link, buttonText = '글 보기' }: ShareParams) {
+  if (!initKakao()) return false;
 
   const content: any = {
     title,
@@ -59,4 +56,37 @@ export function shareToKakao({ title, description, imageUrl, link, buttonText = 
       },
     ],
   });
+  return true;
+}
+
+export function isKakaoAvailable() {
+  return typeof window !== 'undefined' && !!window.Kakao && !!KAKAO_APP_KEY;
+}
+
+export async function copyLink(link: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(link);
+    return true;
+  } catch {
+    // fallback for older browsers
+    const textarea = document.createElement('textarea');
+    textarea.value = link;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    return true;
+  }
+}
+
+export async function webShare({ title, description, link }: ShareParams): Promise<boolean> {
+  if (!navigator.share) return false;
+  try {
+    await navigator.share({ title, text: description, url: link });
+    return true;
+  } catch {
+    return false;
+  }
 }
