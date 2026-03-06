@@ -59,7 +59,8 @@ export async function uploadNoticeImage(file: FormData) {
   const imageFile = file.get('file') as File;
   if (!imageFile) return { error: 'No file provided' };
 
-  const fileName = `notices/${auth.userId}/${Date.now()}_${imageFile.name}`;
+  const ext = imageFile.name.split('.').pop()?.toLowerCase() || 'jpg';
+  const fileName = `notices/${auth.userId}/${Date.now()}.${ext}`;
   const { data, error } = await supabase.storage
     .from('post-images')
     .upload(fileName, imageFile);
