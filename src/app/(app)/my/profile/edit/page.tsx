@@ -46,7 +46,7 @@ export default function EditProfilePage() {
     const form = e.currentTarget;
     setLoading(true);
     setError('');
-    globalLoading.start();
+    globalLoading.startBlocking();
 
     try {
       let newAvatarUrl = avatarUrl;

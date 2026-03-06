@@ -66,7 +66,7 @@ export default function OpenChatForm({ mode, chatId, defaultValues }: OpenChatFo
     const form = e.currentTarget;
     setLoading(true);
     setError('');
-    globalLoading.start();
+    globalLoading.startBlocking();
 
     try {
       // Upload new images

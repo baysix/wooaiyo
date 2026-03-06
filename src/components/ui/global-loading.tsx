@@ -5,13 +5,17 @@ import { usePathname } from 'next/navigation';
 
 interface LoadingContextType {
   isLoading: boolean;
+  blocking: boolean;
   start: () => void;
+  startBlocking: () => void;
   done: () => void;
 }
 
 const LoadingContext = createContext<LoadingContextType>({
   isLoading: false,
+  blocking: false,
   start: () => {},
+  startBlocking: () => {},
   done: () => {},
 });
 
@@ -21,16 +25,25 @@ export function useLoading() {
 
 export function LoadingProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
+  const [blocking, setBlocking] = useState(false);
   const pathname = usePathname();
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const start = useCallback(() => {
     setIsLoading(true);
+    setBlocking(false);
+  }, []);
+
+  const startBlocking = useCallback(() => {
+    setIsLoading(true);
+    setBlocking(true);
   }, []);
 
   const done = useCallback(() => {
-    // Small delay so the bar completes its animation
-    timerRef.current = setTimeout(() => setIsLoading(false), 200);
+    timerRef.current = setTimeout(() => {
+      setIsLoading(false);
+      setBlocking(false);
+    }, 200);
   }, []);
 
   // Stop loading on route change
@@ -50,7 +63,6 @@ export function LoadingProvider({ children }: { children: React.ReactNode }) {
       const href = anchor.getAttribute('href');
       if (!href || href.startsWith('http') || href.startsWith('#') || href.startsWith('mailto:')) return;
 
-      // Don't trigger for same-page links
       if (href === pathname) return;
 
       start();
@@ -61,14 +73,14 @@ export function LoadingProvider({ children }: { children: React.ReactNode }) {
   }, [pathname, start]);
 
   return (
-    <LoadingContext.Provider value={{ isLoading, start, done }}>
-      <GlobalLoadingBar isLoading={isLoading} />
+    <LoadingContext.Provider value={{ isLoading, blocking, start, startBlocking, done }}>
+      <GlobalLoadingBar isLoading={isLoading} blocking={blocking} />
       {children}
     </LoadingContext.Provider>
   );
 }
 
-function GlobalLoadingBar({ isLoading }: { isLoading: boolean }) {
+function GlobalLoadingBar({ isLoading, blocking }: { isLoading: boolean; blocking: boolean }) {
   const [visible, setVisible] = useState(false);
   const [progress, setProgress] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval>>(undefined);
@@ -78,7 +90,6 @@ function GlobalLoadingBar({ isLoading }: { isLoading: boolean }) {
       setVisible(true);
       setProgress(10);
 
-      // Gradually increase progress
       timerRef.current = setInterval(() => {
         setProgress((prev) => {
           if (prev >= 90) {
@@ -89,7 +100,6 @@ function GlobalLoadingBar({ isLoading }: { isLoading: boolean }) {
         });
       }, 200);
     } else if (visible) {
-      // Complete the bar
       setProgress(100);
       clearInterval(timerRef.current);
 
@@ -114,8 +124,11 @@ function GlobalLoadingBar({ isLoading }: { isLoading: boolean }) {
           style={{ width: `${progress}%` }}
         />
       </div>
-      {/* Transparent overlay to block all interactions during loading */}
-      <div className="fixed inset-0 z-[9998]" />
+      {blocking && (
+        <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-white/60">
+          <div className="h-8 w-8 animate-spin rounded-full border-3 border-gray-200 border-t-[#20C997]" />
+        </div>
+      )}
     </>
   );
 }

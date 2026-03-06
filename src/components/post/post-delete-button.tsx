@@ -14,7 +14,7 @@ export default function PostDeleteButton({ postId }: { postId: string }) {
     if (!confirm('정말 삭제하시겠습니까?')) return;
 
     setLoading(true);
-    globalLoading.start();
+    globalLoading.startBlocking();
     try {
       const result = await deletePost(postId);
       if (result.error) {

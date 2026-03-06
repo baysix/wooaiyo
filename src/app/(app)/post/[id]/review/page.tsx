@@ -43,7 +43,7 @@ export default function ReviewPage() {
 
     setLoading(true);
     setError('');
-    globalLoading.start();
+    globalLoading.startBlocking();
 
     try {
       const result = await createReview(postId, rating, content);

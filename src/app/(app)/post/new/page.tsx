@@ -56,7 +56,7 @@ export default function NewPostPage() {
     const form = e.currentTarget;
     setLoading(true);
     setError(null);
-    globalLoading.start();
+    globalLoading.startBlocking();
 
     try {
       // Upload images via server action

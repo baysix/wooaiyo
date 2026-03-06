@@ -56,7 +56,7 @@ export default function NoticeForm({ mode, noticeId, defaultValues }: NoticeForm
     const form = e.currentTarget;
     setLoading(true);
     setError('');
-    globalLoading.start();
+    globalLoading.startBlocking();
 
     try {
       // Upload new images

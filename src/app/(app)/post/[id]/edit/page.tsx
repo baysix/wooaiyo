@@ -88,7 +88,7 @@ export default function EditPostPage() {
     const form = e.currentTarget;
     setLoading(true);
     setError(null);
-    globalLoading.start();
+    globalLoading.startBlocking();
 
     try {
       // Upload new images
