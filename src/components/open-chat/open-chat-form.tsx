@@ -63,6 +63,7 @@ export default function OpenChatForm({ mode, chatId, defaultValues }: OpenChatFo
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const form = e.currentTarget;
     setLoading(true);
     setError('');
     globalLoading.start();
@@ -82,7 +83,7 @@ export default function OpenChatForm({ mode, chatId, defaultValues }: OpenChatFo
       const keptExisting = existingImageUrls.filter(url => imagePreviews.includes(url));
       const allImageUrls = [...keptExisting, ...uploadedUrls];
 
-      const formData = new FormData(e.currentTarget);
+      const formData = new FormData(form);
 
       const result = mode === 'create'
         ? await createOpenChat(formData, allImageUrls)

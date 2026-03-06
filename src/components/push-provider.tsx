@@ -15,6 +15,30 @@ export default function PushProvider({ userId }: { userId: string | null }) {
     activeChatRoomRef.current = match ? match[1] : null;
   }, [pathname]);
 
+  // Android back button: navigate back in WebView history instead of closing app
+  useEffect(() => {
+    if (!isNativePlatform()) return;
+
+    let listenerHandle: { remove: () => void } | null = null;
+
+    async function initBackButton() {
+      const { App } = await import('@capacitor/app');
+      listenerHandle = await App.addListener('backButton', ({ canGoBack }) => {
+        if (canGoBack) {
+          window.history.back();
+        } else {
+          App.exitApp();
+        }
+      });
+    }
+
+    initBackButton();
+
+    return () => {
+      listenerHandle?.remove();
+    };
+  }, []);
+
   useEffect(() => {
     if (!userId || !isNativePlatform()) return;
 
