@@ -4,9 +4,11 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { signIn } from '@/actions/auth';
 import SubmitButton from '@/components/ui/submit-button';
+import { useLegalModal, LegalLinks, LegalModal } from '@/components/legal-modal';
 
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
+  const { legalModal, setLegalModal } = useLegalModal();
 
   async function handleSubmit(formData: FormData) {
     setError(null);
@@ -68,6 +70,12 @@ export default function LoginPage() {
           회원가입
         </Link>
       </p>
+
+      <div className="mt-4 text-center">
+        <LegalLinks onOpen={setLegalModal} />
+      </div>
+
+      <LegalModal type={legalModal} onClose={() => setLegalModal(null)} />
     </>
   );
 }

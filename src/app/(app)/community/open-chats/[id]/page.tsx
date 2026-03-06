@@ -86,49 +86,41 @@ export default async function OpenChatDetailPage({ params }: Props) {
         )}
       </div>
 
-      <div className="px-4 py-4 space-y-5 pb-32">
+      {/* Title */}
+      <div className="px-4 pt-4 pb-3">
         <h1 className="text-lg font-bold text-gray-900">{chat.title}</h1>
+      </div>
 
-        {/* 기본 정보 table */}
+      <div className="h-2 bg-gray-50" />
+
+      {/* 기본 정보 */}
+      <div className="px-4 py-4">
+        <h2 className="text-sm font-bold text-gray-900 mb-2">기본 정보</h2>
         <div>
-          <h2 className="text-sm font-semibold text-gray-900 mb-2">기본 정보</h2>
-          <div className="rounded-xl border border-gray-100 overflow-hidden">
-            <table className="w-full text-sm">
-              <tbody className="divide-y divide-gray-100">
-                <tr>
-                  <td className="bg-gray-50 px-4 py-2.5 font-medium text-gray-500 w-24">유형</td>
-                  <td className="px-4 py-2.5">{categoryInfo?.icon} {chat.category}</td>
-                </tr>
-                <tr>
-                  <td className="bg-gray-50 px-4 py-2.5 font-medium text-gray-500 w-24">참여가능자</td>
-                  <td className="px-4 py-2.5">{chat.eligibility || '누구나'}</td>
-                </tr>
-                <tr>
-                  <td className="bg-gray-50 px-4 py-2.5 font-medium text-gray-500 w-24">채팅유형</td>
-                  <td className="px-4 py-2.5">{OPEN_CHAT_TYPE_LABELS[chat.chat_type]}</td>
-                </tr>
-                <tr>
-                  <td className="bg-gray-50 px-4 py-2.5 font-medium text-gray-500 w-24">조회수</td>
-                  <td className="px-4 py-2.5">{chat.view_count}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          <InfoRow label="유형" value={`${categoryInfo?.icon ?? ''} ${chat.category}`} />
+          <InfoRow label="참여가능자" value={chat.eligibility || '누구나'} />
+          <InfoRow label="채팅유형" value={OPEN_CHAT_TYPE_LABELS[chat.chat_type]} />
+          <InfoRow label="조회수" value={`${chat.view_count}`} />
         </div>
+      </div>
 
-        {/* Description */}
-        {chat.description && (
-          <div>
-            <h2 className="text-sm font-semibold text-gray-900 mb-2">소개</h2>
-            <p className="text-sm leading-relaxed text-gray-700 whitespace-pre-wrap">
+      <div className="h-2 bg-gray-50" />
+
+      {/* 소개 */}
+      {chat.description && (
+        <>
+          <div className="px-4 py-4">
+            <h2 className="text-sm font-bold text-gray-900 mb-2">소개</h2>
+            <p className="text-[13px] leading-relaxed text-gray-600 whitespace-pre-wrap">
               {chat.description}
             </p>
           </div>
-        )}
+          <div className="h-2 bg-gray-50" />
+        </>
+      )}
 
-        <hr className="border-gray-100" />
-
-        {/* Reviews */}
+      {/* Reviews */}
+      <div className="px-4 py-4 pb-32">
         <OpenChatReviewSection
           openChatId={chat.id}
           reviews={reviews}
@@ -138,7 +130,7 @@ export default async function OpenChatDetailPage({ params }: Props) {
         />
       </div>
 
-      {/* Bottom action bar */}
+      {/* Bottom action bar - fixed */}
       <div className="fixed bottom-16 left-0 right-0 border-t border-gray-100 bg-white px-4 py-3">
         <div className="mx-auto max-w-lg">
           {chat.chat_type === 'public' && chat.external_link ? (
@@ -163,5 +155,14 @@ export default async function OpenChatDetailPage({ params }: Props) {
         </div>
       </div>
     </>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex border-b border-gray-50 py-2 last:border-b-0">
+      <span className="w-20 shrink-0 text-xs text-gray-400">{label}</span>
+      <span className="text-xs font-medium text-gray-700">{value}</span>
+    </div>
   );
 }

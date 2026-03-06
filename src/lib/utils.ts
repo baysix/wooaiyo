@@ -1,3 +1,10 @@
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+
 export function formatPrice(price: number): string {
   return price.toLocaleString('ko-KR') + '원';
 }
@@ -19,8 +26,4 @@ export function formatDate(dateString: string): string {
     month: 'long',
     day: 'numeric',
   });
-}
-
-export function cn(...classes: (string | undefined | null | false)[]): string {
-  return classes.filter(Boolean).join(' ');
 }

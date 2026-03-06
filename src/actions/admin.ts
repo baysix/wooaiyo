@@ -152,6 +152,7 @@ export async function createApartment(formData: FormData) {
       address: address.trim(),
       city: (formData.get('city') as string)?.trim() || null,
       district: (formData.get('district') as string)?.trim() || null,
+      is_active: true,
     })
     .select('id')
     .single();
@@ -160,4 +161,27 @@ export async function createApartment(formData: FormData) {
 
   revalidatePath('/admin/apartments');
   return { success: true, id: data.id };
+}
+
+export async function toggleApartmentActive(apartmentId: string) {
+  await requireAdmin();
+  const supabase = createClient();
+
+  const { data: apt } = await supabase
+    .from('apartments')
+    .select('is_active')
+    .eq('id', apartmentId)
+    .single();
+
+  if (!apt) return { error: '아파트를 찾을 수 없습니다' };
+
+  const { error } = await supabase
+    .from('apartments')
+    .update({ is_active: !apt.is_active })
+    .eq('id', apartmentId);
+
+  if (error) return { error: error.message };
+
+  revalidatePath('/admin/apartments');
+  return { success: true, isActive: !apt.is_active };
 }

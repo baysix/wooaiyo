@@ -51,27 +51,29 @@ export default async function MyPage() {
       </header>
 
       {/* Profile Card */}
-      <section className="bg-white px-4 pb-5 pt-2">
-        <div className="flex items-center gap-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 text-2xl overflow-hidden">
+      <section className="bg-white px-4 pb-5 pt-4">
+        <div className="flex items-start gap-3.5">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gray-100 text-2xl overflow-hidden">
             {profile?.avatar_url ? (
               <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
             ) : (
               '👤'
             )}
           </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold">{profile?.nickname ?? '사용자'}</h2>
-              <span className="rounded-full bg-[#20C997]/10 px-2 py-0.5 text-[10px] font-semibold text-[#20C997]">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between">
+              <h2 className="truncate text-[17px] font-bold">{profile?.nickname ?? '사용자'}</h2>
+              <Link href="/my/profile/edit" className="shrink-0 rounded-lg border border-gray-200 px-2.5 py-1 text-[11px] font-medium text-gray-500">
+                편집
+              </Link>
+            </div>
+            <div className="mt-1 flex items-center gap-1.5">
+              <span className="shrink-0 rounded bg-[#20C997]/10 px-1.5 py-0.5 text-[10px] font-semibold text-[#20C997]">
                 {USER_ROLE_LABELS[role]}
               </span>
+              <span className="truncate text-xs text-gray-400">{apartmentName}</span>
             </div>
-            <p className="mt-0.5 text-sm text-gray-500">{apartmentName}</p>
           </div>
-          <Link href="/my/profile/edit" className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600">
-            프로필 편집
-          </Link>
         </div>
 
         {/* Manner Score Bar */}
@@ -182,26 +184,29 @@ export default async function MyPage() {
         {[
           { icon: '🔔', label: '키워드 알림 설정', desc: '원하는 물건이 올라오면 알림', href: '/my/keywords' },
           { icon: '🏠', label: '아파트 변경', desc: apartmentName || '아파트 설정', href: '/my/apartment' },
-          { icon: '📋', label: '이용약관', desc: '', href: '/my/terms' },
-          { icon: '💬', label: '문의하기', desc: '', href: '/my/contact' },
-        ].map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className="flex items-center justify-between px-4 py-3.5 active:bg-gray-50 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-50 text-base">{item.icon}</span>
-              <div>
-                <span className="text-sm font-medium">{item.label}</span>
-                {item.desc && <p className="text-[11px] text-gray-400">{item.desc}</p>}
+          { icon: '💬', label: '문의하기', desc: '네이버 카페에서 문의', href: 'https://cafe.naver.com/wooaiyo', external: true },
+        ].map((item) => {
+          const content = (
+            <>
+              <div className="flex items-center gap-3">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-50 text-base">{item.icon}</span>
+                <div>
+                  <span className="text-sm font-medium">{item.label}</span>
+                  {item.desc && <p className="text-[11px] text-gray-400">{item.desc}</p>}
+                </div>
               </div>
-            </div>
-            <svg className="h-4 w-4 text-gray-300" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-            </svg>
-          </Link>
-        ))}
+              <svg className="h-4 w-4 text-gray-300" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+              </svg>
+            </>
+          );
+          const className = "flex items-center justify-between px-4 py-3.5 active:bg-gray-50 transition-colors";
+          return 'external' in item && item.external ? (
+            <a key={item.href} href={item.href} target="_blank" rel="noopener noreferrer" className={className}>{content}</a>
+          ) : (
+            <Link key={item.href} href={item.href} className={className}>{content}</Link>
+          );
+        })}
       </section>
 
       {/* Sign out + App info */}
@@ -212,6 +217,11 @@ export default async function MyPage() {
           </button>
         </form>
         <p className="mt-3 text-[10px] text-gray-300">우아이요 v0.1.0</p>
+        <div className="mt-2 flex gap-2 text-[10px] text-gray-300">
+          <Link href="/terms" className="underline">이용약관</Link>
+          <span>|</span>
+          <Link href="/privacy" className="underline">개인정보처리방침</Link>
+        </div>
       </section>
 
       <div className="h-4" />

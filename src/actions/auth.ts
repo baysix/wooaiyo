@@ -11,6 +11,8 @@ export async function signUp(formData: FormData) {
 
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
+  const nickname = formData.get('nickname') as string;
+  const apartmentId = formData.get('apartment_id') as string;
 
   // Check if email already exists
   const { data: existing } = await supabase
@@ -24,7 +26,7 @@ export async function signUp(formData: FormData) {
   }
 
   // Hash password and create user
-  const passwordHash = await bcrypt.hash(password, 12);
+  const passwordHash = await bcrypt.hash(password, 10);
 
   const { data: user, error } = await supabase
     .from('users')
@@ -36,11 +38,24 @@ export async function signUp(formData: FormData) {
     return { error: '회원가입에 실패했습니다' };
   }
 
+  // Create profile with nickname and apartment
+  const { error: profileError } = await supabase
+    .from('profiles')
+    .insert({
+      id: user.id,
+      nickname,
+      apartment_id: apartmentId,
+    });
+
+  if (profileError) {
+    return { error: '프로필 생성에 실패했습니다' };
+  }
+
   // Create JWT and set cookie
   const token = await createToken({ userId: user.id, email: user.email });
   await setAuthCookie(token);
 
-  redirect('/register/profile');
+  redirect('/home');
 }
 
 export async function signIn(formData: FormData) {

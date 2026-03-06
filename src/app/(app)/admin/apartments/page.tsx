@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Header from '@/components/layout/header';
-import { getApartmentsList, createApartment } from '@/actions/admin';
+import { getApartmentsList, createApartment, toggleApartmentActive } from '@/actions/admin';
 
 export default function AdminApartmentsPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -134,6 +134,25 @@ export default function AdminApartmentsPage() {
                     <p className="font-bold text-sm text-blue-600">{apt.managerCount}</p>
                     <p className="text-gray-400">운영자</p>
                   </div>
+                  <button
+                    onClick={async () => {
+                      setApartments((prev) =>
+                        prev.map((a) =>
+                          a.id === apt.id ? { ...a, is_active: !a.is_active } : a
+                        )
+                      );
+                      await toggleApartmentActive(apt.id);
+                    }}
+                    className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
+                      apt.is_active ? 'bg-[#20C997]' : 'bg-gray-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                        apt.is_active ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
                 </div>
               </div>
             </div>

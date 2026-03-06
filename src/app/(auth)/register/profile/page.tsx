@@ -4,11 +4,24 @@ import { useState, useEffect } from 'react';
 import { setupProfile } from '@/actions/auth';
 import { getActiveApartments } from '@/actions/apartments';
 import SubmitButton from '@/components/ui/submit-button';
-import type { Apartment } from '@/types/database';
+import {
+  Combobox,
+  ComboboxInput,
+  ComboboxContent,
+  ComboboxList,
+  ComboboxItem,
+  ComboboxEmpty,
+} from '@/components/ui/combobox';
+
+interface Apartment {
+  id: string;
+  name: string;
+  address: string;
+}
 
 export default function ProfileSetupPage() {
   const [apartments, setApartments] = useState<Apartment[]>([]);
-  const [selectedApt, setSelectedApt] = useState('');
+  const [selectedValue, setSelectedValue] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -19,8 +32,19 @@ export default function ProfileSetupPage() {
     fetchApartments();
   }, []);
 
+  const selectedApt = apartments.find(
+    (apt) => `${apt.name} (${apt.address})` === selectedValue
+  );
+
   async function handleSubmit(formData: FormData) {
     setError(null);
+
+    if (!selectedApt) {
+      setError('아파트를 선택해주세요');
+      return;
+    }
+
+    formData.set('apartment_id', selectedApt.id);
     const result = await setupProfile(formData);
     if (result?.error) {
       setError(result.error);
@@ -46,30 +70,38 @@ export default function ProfileSetupPage() {
             required
             minLength={2}
             maxLength={20}
-            className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-[#20C997] focus:outline-none focus:ring-1 focus:ring-[#20C997]"
+            className="mt-1 block w-full rounded-lg border border-gray-200 px-4 py-3 text-sm focus:border-[#20C997] focus:outline-none"
             placeholder="2~20자"
           />
         </div>
 
         <div>
-          <label htmlFor="apartment_id" className="block text-sm font-medium text-gray-700">
+          <label className="block text-sm font-medium text-gray-700">
             우리 아파트 선택
           </label>
-          <select
-            id="apartment_id"
-            name="apartment_id"
-            required
-            value={selectedApt}
-            onChange={(e) => setSelectedApt(e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-[#20C997] focus:outline-none focus:ring-1 focus:ring-[#20C997]"
-          >
-            <option value="">아파트를 선택해주세요</option>
-            {apartments.map((apt) => (
-              <option key={apt.id} value={apt.id}>
-                {apt.name} ({apt.address})
-              </option>
-            ))}
-          </select>
+          <div className="mt-1">
+            <Combobox
+              items={apartments.map((apt) => `${apt.name} (${apt.address})`)}
+              value={selectedValue}
+              onValueChange={setSelectedValue}
+            >
+              <ComboboxInput
+                placeholder="아파트를 검색해주세요"
+                className="w-full"
+              />
+              <ComboboxContent>
+                <ComboboxEmpty>검색 결과가 없습니다</ComboboxEmpty>
+                <ComboboxList>
+                  {(item) => (
+                    <ComboboxItem key={item} value={item}>
+                      {item}
+                    </ComboboxItem>
+                  )}
+                </ComboboxList>
+              </ComboboxContent>
+            </Combobox>
+          </div>
+          <input type="hidden" name="apartment_id" value={selectedApt?.id ?? ''} />
         </div>
 
         {error && (
