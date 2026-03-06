@@ -6,7 +6,7 @@ export default function AppLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex h-screen flex-col">
+    <div className="flex flex-col" style={{ height: '100dvh' }}>
       <div className="flex-1 overflow-y-auto pb-20">
         {children}
       </div>
