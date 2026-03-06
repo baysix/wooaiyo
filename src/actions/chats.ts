@@ -119,6 +119,26 @@ export async function sendMessage(chatRoomId: string, content: string) {
     .update({ updated_at: now, [readColumn]: now })
     .eq('id', chatRoomId);
 
+  // Send push notification to recipient (fire-and-forget)
+  const recipientId = room.buyer_id === auth.userId ? room.seller_id : room.buyer_id;
+  const trimmedContent = content.trim();
+
+  supabase
+    .from('profiles')
+    .select('nickname')
+    .eq('id', auth.userId)
+    .single()
+    .then(({ data: senderProfile }) => {
+      import('@/lib/push').then(({ sendPushToUser }) =>
+        sendPushToUser({
+          recipientUserId: recipientId,
+          title: senderProfile?.nickname ?? '새 메시지',
+          body: trimmedContent.length > 100 ? trimmedContent.slice(0, 100) + '...' : trimmedContent,
+          data: { type: 'chat_message', chatRoomId },
+        }).catch(() => {})
+      );
+    });
+
   revalidatePath('/chat');
   return { success: true };
 }

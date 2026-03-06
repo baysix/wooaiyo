@@ -40,3 +40,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 node_modules
+
+# capacitor / android
+/android/app/build/
+/android/.gradle/
+/android/build/
+/android/app/google-services.json
+*-firebase-adminsdk-*.json
