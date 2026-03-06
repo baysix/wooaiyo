@@ -187,8 +187,8 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
           )}
           {p.type === 'rental' && (
             <div className="space-y-1">
-              {p.rental_fee && <div>{formatPrice(p.rental_fee)} <span className="text-sm font-normal text-gray-500">/ 대여비</span></div>}
-              {p.deposit && <div className="text-sm font-normal text-gray-600">보증금 {formatPrice(p.deposit)}</div>}
+              {p.rental_fee != null && <div>{formatPrice(p.rental_fee)} <span className="text-sm font-normal text-gray-500">/ 대여비</span></div>}
+              {p.deposit != null && <div className="text-sm font-normal text-gray-600">보증금 {formatPrice(p.deposit)}</div>}
               {p.rental_period && <div className="text-sm font-normal text-gray-500">대여 기간: {p.rental_period}</div>}
             </div>
           )}
