@@ -4,6 +4,7 @@ import Header from '@/components/layout/header';
 import PostActionBar from '@/components/post/post-action-bar';
 import PostDeleteButton from '@/components/post/post-delete-button';
 import PostShareButton from '@/components/post/post-share-button';
+import PostImageCarousel from '@/components/post/post-image-carousel';
 import { createClient } from '@/lib/supabase/server';
 import { requireAuthWithRole, isAdmin as checkIsAdmin } from '@/lib/auth';
 import { POST_TYPE_LABELS, POST_STATUS_LABELS, STATUS_COLORS, TYPE_COLORS } from '@/lib/constants';
@@ -120,28 +121,7 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
       />
 
       {/* Image carousel */}
-      <div className="relative">
-        {p.images && p.images.length > 0 ? (
-          <div className="flex snap-x snap-mandatory overflow-x-auto hide-scrollbar">
-            {p.images.map((img, i) => (
-              <div key={i} className="h-80 w-full flex-shrink-0 snap-center">
-                <img src={img} alt={`${p.title} ${i + 1}`} className="h-full w-full object-cover" />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="flex h-48 items-center justify-center bg-gray-100 text-gray-300">
-            <svg className="h-16 w-16" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          </div>
-        )}
-        {p.images && p.images.length > 1 && (
-          <div className="absolute bottom-3 right-3 rounded-full bg-black/50 px-2.5 py-1 text-xs text-white">
-            1/{p.images.length}
-          </div>
-        )}
-      </div>
+      <PostImageCarousel images={p.images ?? []} title={p.title} />
 
       {/* Author info */}
       <div className="flex items-center gap-3 border-b border-gray-100 px-4 py-3">
@@ -187,8 +167,8 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
           )}
           {p.type === 'rental' && (
             <div className="space-y-1">
-              {p.rental_fee != null && <div>{formatPrice(p.rental_fee)} <span className="text-sm font-normal text-gray-500">/ 대여비</span></div>}
-              {p.deposit != null && <div className="text-sm font-normal text-gray-600">보증금 {formatPrice(p.deposit)}</div>}
+              {p.rental_fee != null && <div>{formatPrice(p.rental_fee)}<span className="text-sm font-normal text-gray-500">(대여비)</span></div>}
+              {p.deposit != null && <div className="text-sm font-normal text-gray-600">{formatPrice(p.deposit)}<span className="text-gray-500">(보증금)</span></div>}
               {p.rental_period && <div className="text-sm font-normal text-gray-500">대여 기간: {p.rental_period}</div>}
             </div>
           )}

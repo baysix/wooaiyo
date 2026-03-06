@@ -4,6 +4,7 @@ import { getNotice } from '@/actions/notices';
 import { USER_ROLE_LABELS } from '@/lib/constants';
 import type { NoticeWithAuthor } from '@/types/database';
 import NoticeActions from './notice-actions';
+import ClickableImages from '@/components/ui/clickable-images';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -37,7 +38,7 @@ export default async function NoticeDetailPage({ params }: Props) {
       {/* Thumbnail - first image */}
       {images[0] && (
         <div className="w-full">
-          <img src={images[0]} alt={notice.title} className="h-56 w-full object-cover" />
+          <ClickableImages images={[images[0]]} className="h-56 w-full object-cover cursor-pointer" />
         </div>
       )}
 
@@ -68,17 +69,10 @@ export default async function NoticeDetailPage({ params }: Props) {
           {notice.content}
         </div>
 
-        {/* Body images - 2nd and 3rd */}
+        {/* Body images */}
         {images.length > 1 && (
           <div className="mt-4 space-y-3">
-            {images.slice(1).map((img, i) => (
-              <img
-                key={i}
-                src={img}
-                alt={`첨부 ${i + 2}`}
-                className="w-full rounded-lg object-cover"
-              />
-            ))}
+            <ClickableImages images={images.slice(1)} className="w-full rounded-lg object-cover cursor-pointer" />
           </div>
         )}
       </article>
