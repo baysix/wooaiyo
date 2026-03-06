@@ -62,6 +62,7 @@ export default function ChatView({
   const [copied, setCopied] = useState(false);
   const [otherTyping, setOtherTyping] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const channelRef = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -159,6 +160,7 @@ export default function ChatView({
       setMessages(prev => prev.filter(m => m.id !== optimisticMsg.id));
     }
     setSending(false);
+    inputRef.current?.focus();
   }
 
   async function handleApprove() {
@@ -349,6 +351,7 @@ export default function ChatView({
       <div className="flex-shrink-0 border-t border-gray-100 bg-white px-4 py-3" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
         <div className="flex items-end gap-2">
           <textarea
+            ref={inputRef}
             value={input}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
