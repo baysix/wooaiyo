@@ -107,11 +107,15 @@ function GlobalLoadingBar({ isLoading }: { isLoading: boolean }) {
   if (!visible) return null;
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-[9999] h-[3px]">
-      <div
-        className="h-full bg-[#20C997] transition-all duration-300 ease-out"
-        style={{ width: `${progress}%` }}
-      />
-    </div>
+    <>
+      <div className="fixed top-0 left-0 right-0 z-[9999] h-[3px]">
+        <div
+          className="h-full bg-[#20C997] transition-all duration-300 ease-out"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+      {/* Transparent overlay to block all interactions during loading */}
+      <div className="fixed inset-0 z-[9998]" />
+    </>
   );
 }
