@@ -1,4 +1,5 @@
 import BottomNav from '@/components/layout/bottom-nav';
+import ScrollArea from '@/components/layout/scroll-area';
 
 export default function AppLayout({
   children,
@@ -7,9 +8,9 @@ export default function AppLayout({
 }) {
   return (
     <div className="flex flex-col" style={{ height: '100dvh' }}>
-      <div className="flex-1 overflow-y-auto pb-20">
+      <ScrollArea>
         {children}
-      </div>
+      </ScrollArea>
       <BottomNav />
     </div>
   );
