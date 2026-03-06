@@ -15,6 +15,20 @@ export default function PushProvider({ userId }: { userId: string | null }) {
     activeChatRoomRef.current = match ? match[1] : null;
   }, [pathname]);
 
+  // Status bar: prevent WebView from rendering behind it
+  useEffect(() => {
+    if (!isNativePlatform()) return;
+
+    async function initStatusBar() {
+      const { StatusBar, Style } = await import('@capacitor/status-bar');
+      await StatusBar.setOverlaysWebView({ overlay: false });
+      await StatusBar.setStyle({ style: Style.Light });
+      await StatusBar.setBackgroundColor({ color: '#FFFFFF' });
+    }
+
+    initStatusBar().catch(() => {});
+  }, []);
+
   // Android back button: navigate back in WebView history instead of closing app
   useEffect(() => {
     if (!isNativePlatform()) return;
