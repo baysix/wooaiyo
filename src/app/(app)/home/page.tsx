@@ -52,7 +52,7 @@ export default async function HomePage() {
         </Link>
       </header>
 
-      <div className="overflow-y-auto" style={{ height: 'calc(100vh - 120px - 64px)' }}>
+      <div>
         {/* Banner area */}
         <section className="px-4 pt-2 pb-4">
           <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#20C997] to-[#0CA678] px-5 py-6 text-white">
