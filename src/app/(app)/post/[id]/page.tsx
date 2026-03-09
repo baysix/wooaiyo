@@ -186,6 +186,9 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
         </div>
       </div>
 
+      {/* Spacer for fixed action bar */}
+      {!isAuthor && <div className="h-20" />}
+
       {/* Bottom action bar */}
       {!isAuthor && (
         <PostActionBar postId={id} initialBookmarked={!!bookmark} shareData={shareData} />

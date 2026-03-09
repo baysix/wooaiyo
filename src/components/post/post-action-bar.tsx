@@ -46,7 +46,7 @@ export default function PostActionBar({ postId, initialBookmarked, shareData }: 
 
   return (
     <>
-      <div className="fixed bottom-20 left-0 right-0 border-t border-gray-100 bg-white px-4 py-3">
+      <div className="fixed bottom-0 left-0 right-0 border-t border-gray-100 bg-white px-4 py-3" style={{ bottom: 'calc(62px + env(safe-area-inset-bottom, 0px))' }}>
         <div className="mx-auto flex max-w-lg items-center gap-2">
           <button
             onClick={handleBookmark}

@@ -111,7 +111,7 @@ export default async function OpenChatDetailPage({ params }: Props) {
       </div>
 
       {/* Bottom action bar - fixed */}
-      <div className="fixed bottom-16 left-0 right-0 border-t border-gray-100 bg-white px-4 py-3">
+      <div className="fixed left-0 right-0 border-t border-gray-100 bg-white px-4 py-3" style={{ bottom: 'calc(62px + env(safe-area-inset-bottom, 0px))' }}>
         <div className="mx-auto max-w-lg">
           {chat.chat_type === 'public' && chat.external_link ? (
             <a
