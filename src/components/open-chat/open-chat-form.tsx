@@ -220,7 +220,7 @@ export default function OpenChatForm({ mode, chatId, defaultValues }: OpenChatFo
           maxLength={100}
           defaultValue={defaultValues?.title}
           placeholder="오픈채팅 이름을 입력하세요"
-          className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-[#20C997] focus:outline-none focus:ring-1 focus:ring-[#20C997]"
+          className="w-full rounded-lg border border-gray-200 px-4 py-3 text-base font-medium focus:border-[#20C997] focus:outline-none focus:ring-1 focus:ring-[#20C997]"
         />
       </div>
 

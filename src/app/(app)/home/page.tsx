@@ -18,11 +18,12 @@ export default async function HomePage() {
 
   // Get counts for badges
   const apartmentId = profile?.apartment_id ?? '';
-  const [saleCount, shareCount, rentalCount, noticeCount] = await Promise.all([
+  const [saleCount, shareCount, rentalCount, noticeCount, openChatCount] = await Promise.all([
     supabase.from('posts').select('id', { count: 'exact', head: true }).eq('apartment_id', apartmentId).eq('type', 'sale').neq('status', 'hidden'),
     supabase.from('posts').select('id', { count: 'exact', head: true }).eq('apartment_id', apartmentId).eq('type', 'share').neq('status', 'hidden'),
     supabase.from('posts').select('id', { count: 'exact', head: true }).eq('apartment_id', apartmentId).eq('type', 'rental').neq('status', 'hidden'),
     supabase.from('notices').select('id', { count: 'exact', head: true }).eq('apartment_id', apartmentId),
+    supabase.from('open_chats').select('id', { count: 'exact', head: true }).eq('apartment_id', apartmentId),
   ]);
 
   return (
@@ -138,7 +139,11 @@ export default async function HomePage() {
             >
               <span className="text-2xl">💬</span>
               <span className="text-xs font-semibold text-gray-700">오픈채팅</span>
-              <span className="text-[10px] text-gray-400">홍보</span>
+              {openChatCount.count ? (
+                <span className="text-[10px] text-gray-400">{openChatCount.count}건</span>
+              ) : (
+                <span className="text-[10px] text-gray-400">-</span>
+              )}
             </Link>
           </div>
         </section>

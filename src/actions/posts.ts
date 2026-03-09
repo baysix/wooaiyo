@@ -73,13 +73,69 @@ export async function createPost(formData: FormData, imageUrls: string[]) {
     postData.rental_period = formData.get('rental_period') || null;
   }
 
-  const { error } = await supabase
+  const { data: inserted, error } = await supabase
     .from('posts')
-    .insert(postData);
+    .insert(postData)
+    .select('id')
+    .single();
 
   if (error) {
     return { error: error.message };
   }
+
+  // Fire-and-forget: send push to users with matching keyword alerts
+  const title = formData.get('title') as string;
+  const description = formData.get('description') as string;
+  const postId = inserted.id;
+  const aptId = profile.apartment_id;
+
+  supabase
+    .from('keyword_alerts')
+    .select('user_id, keyword')
+    .eq('is_active', true)
+    .neq('user_id', auth.userId)
+    .then(({ data: alerts }) => {
+      if (!alerts || alerts.length === 0) return;
+
+      // Filter alerts matching title or description (case-insensitive)
+      const matchedByUser = new Map<string, string[]>();
+      for (const alert of alerts) {
+        const kw = alert.keyword.toLowerCase();
+        if (
+          title?.toLowerCase().includes(kw) ||
+          description?.toLowerCase().includes(kw)
+        ) {
+          const existing = matchedByUser.get(alert.user_id) ?? [];
+          existing.push(alert.keyword);
+          matchedByUser.set(alert.user_id, existing);
+        }
+      }
+
+      if (matchedByUser.size === 0) return;
+      const userIds = Array.from(matchedByUser.keys());
+
+      // Verify users are in the same apartment, then send push
+      supabase
+        .from('profiles')
+        .select('id')
+        .in('id', userIds)
+        .eq('apartment_id', aptId)
+        .then(({ data: sameAptUsers }) => {
+          if (!sameAptUsers) return;
+          import('@/lib/push').then(({ sendPushToUser }) => {
+            for (const u of sameAptUsers) {
+              const keywords = matchedByUser.get(u.id);
+              if (!keywords) continue;
+              sendPushToUser({
+                recipientUserId: u.id,
+                title: `키워드 알림: ${keywords[0]}`,
+                body: title,
+                data: { type: 'keyword_match', postId },
+              }).catch(() => {});
+            }
+          });
+        });
+    });
 
   revalidatePath('/');
   return { success: true };
@@ -323,6 +379,37 @@ export async function getMyFavorites() {
     .neq('status', 'hidden');
 
   return posts ?? [];
+}
+
+export async function searchPosts(query: string, type?: string) {
+  const auth = await requireAuth();
+  const supabase = createClient();
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('apartment_id')
+    .eq('id', auth.userId)
+    .single();
+
+  const apartmentId = profile?.apartment_id ?? '';
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+
+  let q = supabase
+    .from('posts')
+    .select('*, author:profiles!author_id(id, nickname, avatar_url), category:categories(id, name, icon), location:apartment_locations(id, name)')
+    .eq('apartment_id', apartmentId)
+    .neq('status', 'hidden')
+    .or(`title.ilike.%${trimmed}%,description.ilike.%${trimmed}%`)
+    .order('created_at', { ascending: false })
+    .limit(50);
+
+  if (type && type !== 'all') {
+    q = q.eq('type', type);
+  }
+
+  const { data } = await q;
+  return data ?? [];
 }
 
 export async function getMyTransactions() {

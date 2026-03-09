@@ -91,11 +91,13 @@ export default function PushProvider({ userId }: { userId: string | null }) {
         }
       });
 
-      // Notification tap: navigate to chat room
+      // Notification tap: navigate based on type
       await PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
-        const chatRoomId = action.notification.data?.chatRoomId;
-        if (chatRoomId) {
-          window.location.href = `/chat/${chatRoomId}`;
+        const data = action.notification.data;
+        if (data?.type === 'keyword_match' && data?.postId) {
+          window.location.href = `/post/${data.postId}`;
+        } else if (data?.chatRoomId) {
+          window.location.href = `/chat/${data.chatRoomId}`;
         }
       });
 

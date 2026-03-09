@@ -7,6 +7,14 @@ import { useLoading } from '@/components/ui/global-loading';
 import { getPost, getPostFormData, updatePost, uploadPostImage } from '@/actions/posts';
 import { POST_TYPE_LABELS } from '@/lib/constants';
 import { cn } from '@/lib/utils';
+import {
+  Combobox,
+  ComboboxInput,
+  ComboboxContent,
+  ComboboxList,
+  ComboboxItem,
+  ComboboxEmpty,
+} from '@/components/ui/combobox';
 import type { PostType, Category, ApartmentLocation } from '@/types/database';
 
 const postTypes: PostType[] = ['sale', 'share', 'rental'];
@@ -32,6 +40,10 @@ export default function EditPostPage() {
   // Form defaults
   const [defaults, setDefaults] = useState<Record<string, unknown>>({});
 
+  // Combobox state
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
+
   useEffect(() => {
     async function fetchData() {
       const [postResult, formData] = await Promise.all([
@@ -45,18 +57,38 @@ export default function EditPostPage() {
       }
 
       const p = postResult.post;
-      setCategories(formData.categories as Category[]);
-      setLocations(formData.locations as ApartmentLocation[]);
+      const cats = formData.categories as Category[];
+      const locs = formData.locations as ApartmentLocation[];
+      setCategories(cats);
+      setLocations(locs);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const post = p as any;
       setType(post.type);
       setDefaults(post);
       setExistingImageUrls(post.images ?? []);
       setImagePreviews(post.images ?? []);
+
+      // Set combobox defaults
+      if (post.category_id) {
+        const cat = cats.find((c) => c.id === post.category_id);
+        if (cat) setSelectedCategory(`${cat.icon} ${cat.name}`);
+      }
+      if (post.location_id) {
+        const loc = locs.find((l) => l.id === post.location_id);
+        if (loc) setSelectedLocation(loc.name);
+      }
+
       setFetching(false);
     }
     fetchData();
   }, [postId, router]);
+
+  const matchedCategory = categories.find(
+    (cat) => `${cat.icon} ${cat.name}` === selectedCategory
+  );
+  const matchedLocation = locations.find(
+    (loc) => loc.name === selectedLocation
+  );
 
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
@@ -107,6 +139,8 @@ export default function EditPostPage() {
 
       const formData = new FormData(form);
       formData.set('type', type);
+      formData.set('category_id', matchedCategory?.id ?? '');
+      formData.set('location_id', matchedLocation?.id ?? '');
       const result = await updatePost(postId, formData, allImageUrls);
 
       if (result.error) throw new Error(result.error);
@@ -198,40 +232,51 @@ export default function EditPostPage() {
 
         {/* Title */}
         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">제목</label>
           <input
             name="title"
             required
             maxLength={100}
             defaultValue={d.title}
-            className="w-full border-b border-gray-200 py-3 text-base focus:border-[#20C997] focus:outline-none"
-            placeholder="제목"
+            className="w-full rounded-lg border border-gray-200 px-4 py-3 text-base font-medium focus:border-[#20C997] focus:outline-none focus:ring-1 focus:ring-[#20C997]"
+            placeholder="제목을 입력하세요"
           />
         </div>
 
-        {/* Category */}
+        {/* Category - Combobox */}
         <div>
-          <select
-            name="category_id"
-            defaultValue={d.category_id ?? ''}
-            className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm focus:border-[#20C997] focus:outline-none"
+          <label className="block text-sm font-medium text-gray-700 mb-1">카테고리</label>
+          <Combobox
+            items={categories.map((cat) => `${cat.icon} ${cat.name}`)}
+            value={selectedCategory}
+            onValueChange={setSelectedCategory}
           >
-            <option value="">카테고리 선택</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.icon} {cat.name}
-              </option>
-            ))}
-          </select>
+            <ComboboxInput
+              placeholder="카테고리를 선택하세요"
+              className="w-full"
+            />
+            <ComboboxContent>
+              <ComboboxEmpty>검색 결과가 없습니다</ComboboxEmpty>
+              <ComboboxList>
+                {(item) => (
+                  <ComboboxItem key={item} value={item}>
+                    {item}
+                  </ComboboxItem>
+                )}
+              </ComboboxList>
+            </ComboboxContent>
+          </Combobox>
         </div>
 
         {/* Description */}
         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">내용</label>
           <textarea
             name="description"
             required
             rows={5}
             defaultValue={d.description}
-            className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm focus:border-[#20C997] focus:outline-none resize-none"
+            className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm focus:border-[#20C997] focus:outline-none focus:ring-1 focus:ring-[#20C997] resize-none"
             placeholder="내용을 입력해주세요"
           />
         </div>
@@ -239,14 +284,17 @@ export default function EditPostPage() {
         {/* Type-specific fields */}
         {type === 'sale' && (
           <div className="space-y-3">
-            <input
-              name="price"
-              type="number"
-              min="0"
-              defaultValue={d.price ?? ''}
-              className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm focus:border-[#20C997] focus:outline-none"
-              placeholder="가격 (원)"
-            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">가격</label>
+              <input
+                name="price"
+                type="number"
+                min="0"
+                defaultValue={d.price ?? ''}
+                className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm focus:border-[#20C997] focus:outline-none focus:ring-1 focus:ring-[#20C997]"
+                placeholder="가격 (원)"
+              />
+            </div>
             <label className="flex items-center gap-2">
               <input
                 name="is_negotiable"
@@ -261,12 +309,13 @@ export default function EditPostPage() {
 
         {type === 'share' && (
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">수량</label>
             <input
               name="quantity"
               type="number"
               min="1"
               defaultValue={d.quantity ?? 1}
-              className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm focus:border-[#20C997] focus:outline-none"
+              className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm focus:border-[#20C997] focus:outline-none focus:ring-1 focus:ring-[#20C997]"
               placeholder="수량 (선택)"
             />
           </div>
@@ -274,46 +323,64 @@ export default function EditPostPage() {
 
         {type === 'rental' && (
           <div className="space-y-3">
-            <input
-              name="deposit"
-              type="number"
-              min="0"
-              defaultValue={d.deposit ?? ''}
-              className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm focus:border-[#20C997] focus:outline-none"
-              placeholder="보증금 (원, 선택)"
-            />
-            <input
-              name="rental_fee"
-              type="number"
-              min="0"
-              defaultValue={d.rental_fee ?? ''}
-              className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm focus:border-[#20C997] focus:outline-none"
-              placeholder="대여비 (원, 선택)"
-            />
-            <input
-              name="rental_period"
-              type="text"
-              defaultValue={d.rental_period ?? ''}
-              className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm focus:border-[#20C997] focus:outline-none"
-              placeholder="대여 기간 (예: 7일, 1개월)"
-            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">보증금</label>
+              <input
+                name="deposit"
+                type="number"
+                min="0"
+                defaultValue={d.deposit ?? ''}
+                className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm focus:border-[#20C997] focus:outline-none focus:ring-1 focus:ring-[#20C997]"
+                placeholder="보증금 (원, 선택)"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">대여비</label>
+              <input
+                name="rental_fee"
+                type="number"
+                min="0"
+                defaultValue={d.rental_fee ?? ''}
+                className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm focus:border-[#20C997] focus:outline-none focus:ring-1 focus:ring-[#20C997]"
+                placeholder="대여비 (원, 선택)"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">대여 기간</label>
+              <input
+                name="rental_period"
+                type="text"
+                defaultValue={d.rental_period ?? ''}
+                className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm focus:border-[#20C997] focus:outline-none focus:ring-1 focus:ring-[#20C997]"
+                placeholder="예: 7일, 1개월"
+              />
+            </div>
           </div>
         )}
 
-        {/* Location */}
+        {/* Location - Combobox */}
         <div>
-          <select
-            name="location_id"
-            defaultValue={d.location_id ?? ''}
-            className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm focus:border-[#20C997] focus:outline-none"
+          <label className="block text-sm font-medium text-gray-700 mb-1">거래 장소</label>
+          <Combobox
+            items={locations.map((loc) => loc.name)}
+            value={selectedLocation}
+            onValueChange={setSelectedLocation}
           >
-            <option value="">거래 장소 선택</option>
-            {locations.map((loc) => (
-              <option key={loc.id} value={loc.id}>
-                {loc.name}
-              </option>
-            ))}
-          </select>
+            <ComboboxInput
+              placeholder="거래 장소를 선택하세요"
+              className="w-full"
+            />
+            <ComboboxContent>
+              <ComboboxEmpty>검색 결과가 없습니다</ComboboxEmpty>
+              <ComboboxList>
+                {(item) => (
+                  <ComboboxItem key={item} value={item}>
+                    {item}
+                  </ComboboxItem>
+                )}
+              </ComboboxList>
+            </ComboboxContent>
+          </Combobox>
         </div>
 
         {error && (
